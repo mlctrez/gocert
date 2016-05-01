@@ -1,0 +1,13 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "bV40IpiGDUhYLv7xe7PkPBKFW2g=",
+			"path": "github.com/gocraft/web",
+			"revision": "v1.1",
+			"revisionTime": "2015-12-31T19:58:24Z"
+		}
+	],
+	"rootPath": "github.com/mlctrez/gocert"
+}
