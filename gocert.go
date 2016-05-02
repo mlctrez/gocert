@@ -26,7 +26,7 @@ func generatePrivateKey(bits int) (privatekey *rsa.PrivateKey) {
 }
 
 func getSigningKey() (key *rsa.PrivateKey) {
-	caPrivate, err := ioutil.ReadFile("RegistryCA.key")
+	caPrivate, err := ioutil.ReadFile("registryCA.key")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -43,7 +43,7 @@ func getSigningKey() (key *rsa.PrivateKey) {
 }
 
 func getCAFile() (data []byte) {
-	data, err := ioutil.ReadFile("RegistryCA.crt")
+	data, err := ioutil.ReadFile("registryCA.crt")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -154,5 +154,5 @@ func main() {
 		Get("/", (*Context).IndexPage).
 		Get("/newcert/:*", (*Context).NewCert)
 
-	log.Fatal(http.ListenAndServe("localhost:8080", router))
+	log.Fatal(http.ListenAndServe("0.0.0.0:8080", router))
 }

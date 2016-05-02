@@ -3,9 +3,9 @@
 	"ignore": "test",
 	"package": [
 		{
-			"checksumSHA1": "bV40IpiGDUhYLv7xe7PkPBKFW2g=",
+			"checksumSHA1": "XZ/RQf9rdLpFHKhstEckOpGqsOU=",
 			"path": "github.com/gocraft/web",
-			"revision": "v1.1",
+			"revision": "054fd625232f8041af2c88320633047eb0574dc0",
 			"revisionTime": "2015-12-31T19:58:24Z"
 		}
 	],
