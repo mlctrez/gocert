@@ -22,31 +22,31 @@ func generatePrivateKey(bits int) (privatekey *rsa.PrivateKey) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	return privatekey
+	return
 }
 
-func getSigningKey() (key *rsa.PrivateKey) {
-	caPrivate, err := ioutil.ReadFile("registryCA.key")
+func readFile(filename string) (content []byte) {
+	content, err := ioutil.ReadFile(filename)
 	if err != nil {
 		log.Fatal(err)
 	}
+	return
+}
 
-	block, rest := pem.Decode(caPrivate)
-	_ = block
-	_ = rest
+func getSigningKey() (key *rsa.PrivateKey) {
+	caPrivate := readFile("registryCA.key")
 
-	key, er2 := x509.ParsePKCS1PrivateKey(block.Bytes)
-	if er2 != nil {
-		log.Fatal(er2)
+	block, _ := pem.Decode(caPrivate)
+
+	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		log.Fatal(err)
 	}
 	return
 }
 
 func getCAFile() (data []byte) {
-	data, err := ioutil.ReadFile("registryCA.crt")
-	if err != nil {
-		log.Fatal(err)
-	}
+	data = readFile("registryCA.crt")
 	return
 }
 
