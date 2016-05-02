@@ -125,9 +125,11 @@ func generateCertificate(domain string) (data ResponseData) {
 
 }
 
+// Context to pass information between middleware and handler.
 type Context struct {
 }
 
+// ResponseData is used to serialize the json response
 type ResponseData struct {
 	Domain      string
 	Key         string
@@ -136,12 +138,15 @@ type ResponseData struct {
 	Registry string
 }
 
+// NewCert generates a new certificate based on the provided domain
+// and returns the json payload containing the certificate and key.
 func (c *Context) NewCert(rw web.ResponseWriter, req *web.Request) {
 	rw.Header().Add("Content-Type", "application/json")
 	// TODO: validate path parameter
 	json.NewEncoder(rw).Encode(generateCertificate(req.PathParams["*"]))
 }
 
+// IndexPage just serves a simple OK response.
 func (c *Context) IndexPage(rw web.ResponseWriter, req *web.Request) {
 	rw.Header().Set("Content-Type", "text/plain")
 	fmt.Fprintf(rw, "OK")
