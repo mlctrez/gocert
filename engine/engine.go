@@ -15,12 +15,18 @@ import (
 type EngineContext struct {
 	CertificateAuthority           *x509.Certificate
 	CertificateAuthorityPrivateKey *rsa.PrivateKey
-	GeneratedCertificateBits       int
+	PrivateKeyBitLength            int
 }
 
 type CertificateResponse struct {
 	Certificate *x509.Certificate
 	Key         *rsa.PrivateKey
+
+	CertificatePem string
+	CertificateKey string
+
+	CertificateAuthority    *x509.Certificate
+	CertificateAuthorityPem string
 }
 
 func (t *EngineContext) LoadCACertificate(filename string) error {
@@ -65,37 +71,35 @@ func (t *EngineContext) GenCert(domain string) (response *CertificateResponse, e
 	t.validateContext()
 	response = new(CertificateResponse)
 
-	response.Key = utils.GenerateKey(t.GeneratedCertificateBits)
+	response.Key = utils.GenerateKey(t.PrivateKeyBitLength)
 
-	subject := pkix.Name{
+	publicKey := &response.Key.PublicKey
+
+	template := new(x509.Certificate)
+
+	template.IsCA = false
+	template.SerialNumber = utils.GenerateSerial()
+	template.Subject = pkix.Name{
 		CommonName: domain,
 		Locality:   []string{"Saint Louis"},
 		Province:   []string{"Missouri"},
 		Country:    []string{"US"},
 	}
 
-	dnsnames := []string{domain}
-	dnsnames = append(dnsnames, "*." + domain)
-	dnsnames = append(dnsnames, strings.Split(domain, ".")[0])
+	template.DNSNames = []string{domain, "*." + domain, strings.Split(domain, ".")[0]}
 
-	template := x509.Certificate{
-		IsCA:         false,
-		SerialNumber: utils.GenerateSerial(),
-		Subject:      subject,
-		DNSNames:     dnsnames,
+	template.KeyUsage = x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature |
+		x509.KeyUsageContentCommitment
 
-		KeyUsage: x509.KeyUsageKeyEncipherment |
-			x509.KeyUsageDigitalSignature |
-			x509.KeyUsageContentCommitment,
-		BasicConstraintsValid: true,
-	}
+	template.BasicConstraintsValid = true
 
 	template.NotBefore, template.NotAfter = utils.DateRange(30)
 
 	// TODO: handle client cert stuff
 	// template.ExtKeyUsage = append(template.ExtKeyUsage, x509.ExtKeyUsageClientAuth)
 
-	derBytes, err := x509.CreateCertificate(rand.Reader, &template, t.CertificateAuthority, &response.Key.PublicKey, t.CertificateAuthorityPrivateKey)
+	derBytes, err := x509.CreateCertificate(rand.Reader, template, t.CertificateAuthority,
+		publicKey, t.CertificateAuthorityPrivateKey)
 
 	if err != nil {
 		return
@@ -105,6 +109,11 @@ func (t *EngineContext) GenCert(domain string) (response *CertificateResponse, e
 	if err != nil {
 		return
 	}
+
+	response.CertificatePem = utils.EncodePemString("CERTIFICATE", derBytes)
+	response.CertificateKey = utils.EncodePemString("RSA PRIVATE KEY", x509.MarshalPKCS1PrivateKey(response.Key))
+	response.CertificateAuthority = t.CertificateAuthority
+	response.CertificateAuthorityPem = utils.EncodePemString("CERTIFICATE", t.CertificateAuthority.Raw)
 
 	return
 

@@ -72,7 +72,7 @@ func TestReadFile(t *testing.T) {
 }
 
 func TestEncodePemString(t *testing.T) {
-	tdata := []byte{100,100,100,100,100,100}
+	tdata := []byte{100, 100, 100, 100, 100, 100}
 	certContents := EncodePemString("CERTIFICATE", tdata)
 	expected := "-----BEGIN CERTIFICATE-----\nZGRkZGRk\n-----END CERTIFICATE-----\n"
 	if certContents != expected {

@@ -14,17 +14,20 @@ type Context struct {
 }
 
 var (
-	caCertificate string
-	caKey         string
+	engineContext *engine.EngineContext
 )
 
 // NewCert generates a new certificate based on the provided domain
 // and returns the json payload containing the certificate and key.
 func (c *Context) NewCert(rw web.ResponseWriter, req *web.Request) {
+
+	response, err := engineContext.GenCert(req.PathParams["*"])
+	if err != nil {
+		http.Error(rw, "error creating certificate", http.StatusInternalServerError)
+		return
+	}
+
 	rw.Header().Add("Content-Type", "application/json")
-
-	response := engine.GenerateCertificate(req.PathParams["*"])
-
 	json.NewEncoder(rw).Encode(response)
 }
 
@@ -35,7 +38,8 @@ func (c *Context) IndexPage(rw web.ResponseWriter, req *web.Request) {
 }
 
 // Main entry point for server
-func Main() {
+func Main(ctx *engine.EngineContext) {
+	engineContext = ctx
 	router := web.New(Context{}).
 		Middleware(web.LoggerMiddleware).
 		Middleware(web.ShowErrorsMiddleware).

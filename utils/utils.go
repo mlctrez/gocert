@@ -44,7 +44,7 @@ func DateRange(years time.Duration) (notBefore time.Time, notAfter time.Time) {
 }
 
 // EncodePemString is a shorthand method for encoding a byte array into pem
-// format, using the provided the block type string as a header and footer.
+// format, using the blockType as the header and footer.
 func EncodePemString(blockType string, bytes []byte) string {
 	block := pem.Block{Type: blockType, Bytes: bytes}
 	return string(pem.EncodeToMemory(&block))
