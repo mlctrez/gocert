@@ -7,63 +7,65 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"github.com/mlctrez/gocert/utils"
+	"io/ioutil"
 	"log"
 	"strings"
 )
 
-func init() {
-	log.Println("init in engine")
+type EngineContext struct {
+	CertificateAuthority           *x509.Certificate
+	CertificateAuthorityPrivateKey *rsa.PrivateKey
+	GeneratedCertificateBits       int
 }
 
-func getSigningKey() (key *rsa.PrivateKey) {
-	caPrivate := utils.ReadFile("registryCA.key")
+type CertificateResponse struct {
+	Certificate *x509.Certificate
+	Key         *rsa.PrivateKey
+}
 
-	block, _ := pem.Decode(caPrivate)
+func (t *EngineContext) LoadCACertificate(filename string) error {
+	file, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return err
+	}
+	block, _ := pem.Decode(file)
+	cert, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		return err
+	}
+	t.CertificateAuthority = cert
+	return nil
+}
 
+func (t *EngineContext) LoadCAPrivate(filename string) error {
+	caFile, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return err
+	}
+	block, _ := pem.Decode(caFile)
 	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-	return
+	t.CertificateAuthorityPrivateKey = key
+	return nil
 }
 
-func getCABytes() []byte {
-	caFile := utils.ReadFile("registryCA.crt")
-	block, _ := pem.Decode(caFile)
-	return block.Bytes
-}
-
-func getCACertificate() (cert *x509.Certificate) {
-
-	cert, err := x509.ParseCertificate(getCABytes())
-	if err != nil {
-		log.Fatal(err)
+func (t *EngineContext) validateContext() {
+	if t.CertificateAuthority == nil {
+		log.Fatal("EngineContext.CertificateAuthority nil")
 	}
-	return
+	if t.CertificateAuthorityPrivateKey == nil {
+		log.Fatal("EngineContext.CertificateAuthorityPrivateKey nil")
+	}
 }
 
-// types for constructing pem.Block
-const (
-	cert = "CERTIFICATE"
-	key  = "RSA PRIVATE KEY"
-)
+func (t *EngineContext) GenCert(domain string) (response *CertificateResponse, err error) {
 
-// CertResponse is used to serialize the json response.
-type CertResponse struct {
-	Domain      string
-	Key         string
-	Certificate string
+	t.validateContext()
+	response = new(CertificateResponse)
 
-	Registry string
-}
-
-// GenerateCertificate creates an SSL certificate for the provided domain.
-func GenerateCertificate(domain string) CertResponse {
-
-	certca := getCACertificate()
-	certcaprivate := getSigningKey()
-
-	certprivate := utils.GenerateKey(2048)
+	response.Key = utils.GenerateKey(t.GeneratedCertificateBits)
 
 	subject := pkix.Name{
 		CommonName: domain,
@@ -72,7 +74,9 @@ func GenerateCertificate(domain string) CertResponse {
 		Country:    []string{"US"},
 	}
 
-	dnsnames := []string{domain, "*." + domain, strings.Split(domain, ".")[0]}
+	dnsnames := []string{domain}
+	dnsnames = append(dnsnames, "*." + domain)
+	dnsnames = append(dnsnames, strings.Split(domain, ".")[0])
 
 	template := x509.Certificate{
 		IsCA:         false,
@@ -88,21 +92,20 @@ func GenerateCertificate(domain string) CertResponse {
 
 	template.NotBefore, template.NotAfter = utils.DateRange(30)
 
+	// TODO: handle client cert stuff
 	// template.ExtKeyUsage = append(template.ExtKeyUsage, x509.ExtKeyUsageClientAuth)
 
-	derBytes, err := x509.CreateCertificate(rand.Reader, &template, certca, &certprivate.PublicKey, certcaprivate)
+	derBytes, err := x509.CreateCertificate(rand.Reader, &template, t.CertificateAuthority, &response.Key.PublicKey, t.CertificateAuthorityPrivateKey)
+
 	if err != nil {
-		log.Fatalf("failed CreateCertificate: %s", err)
+		return
 	}
 
-	//certBlock := pem.Block{Type: CERT, Bytes: derBytes}
-	keyBlock := pem.Block{Type: key, Bytes: x509.MarshalPKCS1PrivateKey(certprivate)}
-
-	return CertResponse{
-		Domain:      domain,
-		Certificate: utils.EncodePemString(cert, derBytes),
-		Key:         string(pem.EncodeToMemory(&keyBlock)),
-		Registry:    utils.EncodePemString(cert, getCABytes()),
+	response.Certificate, err = x509.ParseCertificate(derBytes)
+	if err != nil {
+		return
 	}
+
+	return
 
 }

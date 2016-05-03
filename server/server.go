@@ -13,6 +13,11 @@ import (
 type Context struct {
 }
 
+var (
+	caCertificate string
+	caKey         string
+)
+
 // NewCert generates a new certificate based on the provided domain
 // and returns the json payload containing the certificate and key.
 func (c *Context) NewCert(rw web.ResponseWriter, req *web.Request) {
