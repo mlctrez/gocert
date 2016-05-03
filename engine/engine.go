@@ -78,6 +78,7 @@ func (t *Context) LoadCertificates(pub string, priv string) error {
 	if err != nil {
 		return err
 	}
+	return nil
 }
 
 // GenerateCertificate uses the certificate authority and private key to generate a certificate for the provided domain.

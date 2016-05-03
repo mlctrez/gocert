@@ -21,7 +21,7 @@ var (
 // and returns the json payload containing the certificate and key.
 func (c *Context) NewCert(rw web.ResponseWriter, req *web.Request) {
 
-	response, err := engineContext.GenCert(req.PathParams["*"])
+	response, err := engineContext.GenerateCertificate(req.PathParams["*"])
 	if err != nil {
 		http.Error(rw, "error creating certificate", http.StatusInternalServerError)
 		return
