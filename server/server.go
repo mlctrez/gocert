@@ -23,8 +23,7 @@ func (c *Context) NewCert(rw web.ResponseWriter, req *web.Request) {
 
 	response, err := engineContext.GenerateCertificate(req.PathParams["*"])
 	if err != nil {
-		http.Error(rw, "error creating certificate", http.StatusInternalServerError)
-		return
+		panic(err)
 	}
 
 	rw.Header().Add("Content-Type", "application/json")

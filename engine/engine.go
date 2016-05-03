@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"errors"
 	"github.com/mlctrez/gocert/utils"
 	"io/ioutil"
 	"log"
@@ -84,6 +85,11 @@ func (t *Context) LoadCertificates(pub string, priv string) error {
 // GenerateCertificate uses the certificate authority and private key to generate a certificate for the provided domain.
 // The wildcard and short domain name are also added as subject alternative names.
 func (t *Context) GenerateCertificate(domain string) (response *CertificateResponse, err error) {
+
+	if !strings.Contains(domain, ".") {
+		err = errors.New("domain must contain at least one dot")
+		return
+	}
 
 	t.validateContext()
 	response = new(CertificateResponse)
