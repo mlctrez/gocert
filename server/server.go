@@ -14,7 +14,7 @@ type Context struct {
 }
 
 var (
-	engineContext *engine.EngineContext
+	engineContext *engine.Context
 )
 
 // NewCert generates a new certificate based on the provided domain
@@ -38,7 +38,7 @@ func (c *Context) IndexPage(rw web.ResponseWriter, req *web.Request) {
 }
 
 // Main entry point for server
-func Main(ctx *engine.EngineContext) {
+func Main(ctx *engine.Context) {
 	engineContext = ctx
 	router := web.New(Context{}).
 		Middleware(web.LoggerMiddleware).

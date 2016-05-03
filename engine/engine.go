@@ -12,12 +12,14 @@ import (
 	"strings"
 )
 
-type EngineContext struct {
+// Context contains the attributes that are used to generate certificates.
+type Context struct {
 	CertificateAuthority           *x509.Certificate
 	CertificateAuthorityPrivateKey *rsa.PrivateKey
 	PrivateKeyBitLength            int
 }
 
+// CertificateResponse is the result of a certificate generation request.
 type CertificateResponse struct {
 	Certificate *x509.Certificate
 	Key         *rsa.PrivateKey
@@ -29,7 +31,7 @@ type CertificateResponse struct {
 	CertificateAuthorityPem string
 }
 
-func (t *EngineContext) LoadCACertificate(filename string) error {
+func (t *Context) loadCACertificate(filename string) error {
 	file, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return err
@@ -43,7 +45,7 @@ func (t *EngineContext) LoadCACertificate(filename string) error {
 	return nil
 }
 
-func (t *EngineContext) LoadCAPrivate(filename string) error {
+func (t *Context) loadCAPrivate(filename string) error {
 	caFile, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return err
@@ -57,7 +59,7 @@ func (t *EngineContext) LoadCAPrivate(filename string) error {
 	return nil
 }
 
-func (t *EngineContext) validateContext() {
+func (t *Context) validateContext() {
 	if t.CertificateAuthority == nil {
 		log.Fatal("EngineContext.CertificateAuthority nil")
 	}
@@ -66,7 +68,21 @@ func (t *EngineContext) validateContext() {
 	}
 }
 
-func (t *EngineContext) GenCert(domain string) (response *CertificateResponse, err error) {
+// LoadCertificates reads the public and private keys for the certificate authority into the context.
+func (t *Context) LoadCertificates(pub string, priv string) error {
+	err := t.loadCACertificate(pub)
+	if err != nil {
+		return err
+	}
+	err = t.loadCAPrivate(priv)
+	if err != nil {
+		return err
+	}
+}
+
+// GenerateCertificate uses the certificate authority and private key to generate a certificate for the provided domain.
+// The wildcard and short domain name are also added as subject alternative names.
+func (t *Context) GenerateCertificate(domain string) (response *CertificateResponse, err error) {
 
 	t.validateContext()
 	response = new(CertificateResponse)
@@ -88,8 +104,7 @@ func (t *EngineContext) GenCert(domain string) (response *CertificateResponse, e
 
 	template.DNSNames = []string{domain, "*." + domain, strings.Split(domain, ".")[0]}
 
-	template.KeyUsage = x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature |
-		x509.KeyUsageContentCommitment
+	template.KeyUsage = x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature | x509.KeyUsageContentCommitment
 
 	template.BasicConstraintsValid = true
 

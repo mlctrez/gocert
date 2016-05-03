@@ -8,15 +8,10 @@ import (
 
 func main() {
 
-	eng := new(engine.EngineContext)
+	eng := new(engine.Context)
 	eng.PrivateKeyBitLength = 2048
 
-	err := eng.LoadCACertificate("registryCA.crt")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = eng.LoadCAPrivate("registryCA.key")
+	err := eng.LoadCertificates("registryCA.crt", "registryCA.key")
 	if err != nil {
 		log.Fatal(err)
 	}
