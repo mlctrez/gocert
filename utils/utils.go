@@ -14,7 +14,7 @@ import (
 func GenerateKey(bits int) (privatekey *rsa.PrivateKey) {
 	privatekey, err := rsa.GenerateKey(rand.Reader, bits)
 	if err != nil {
-		log.Fatal()
+		log.Fatal(err)
 	}
 	return
 }
