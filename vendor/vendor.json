@@ -3,10 +3,11 @@
 	"ignore": "test",
 	"package": [
 		{
-			"checksumSHA1": "XZ/RQf9rdLpFHKhstEckOpGqsOU=",
+			"checksumSHA1": "YkJAqF0YuAL52s33dYXgrLVSlWQ=",
+			"origin": "github.com/mlctrez/gocert/vendor/github.com/gocraft/web",
 			"path": "github.com/gocraft/web",
-			"revision": "054fd625232f8041af2c88320633047eb0574dc0",
-			"revisionTime": "2015-12-31T19:58:24Z"
+			"revision": "12b4630b4fee3e485b334c4d544bd9dd68fb3d4f",
+			"revisionTime": "2016-05-03T19:16:34Z"
 		}
 	],
 	"rootPath": "github.com/mlctrez/gocert"
