@@ -7,6 +7,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"errors"
+	"fmt"
 	"github.com/mlctrez/gocert/utils"
 	"io/ioutil"
 	"log"
@@ -22,20 +23,15 @@ type Context struct {
 
 // CertificateResponse is the result of a certificate generation request.
 type CertificateResponse struct {
-	Certificate *x509.Certificate
-	Key         *rsa.PrivateKey
-
-	CertificatePem string
-	CertificateKey string
-
-	CertificateAuthority    *x509.Certificate
-	CertificateAuthorityPem string
+	CertificatePem          string `json:"crt_file"`
+	CertificateKey          string `json:"key_file"`
+	CertificateAuthorityPem string `json:"registry_ca"`
 }
 
 func (t *Context) loadCACertificate(filename string) error {
 	file, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return err
+		return errors.New(fmt.Sprintf("error loading CA certificate: %v", err))
 	}
 	block, _ := pem.Decode(file)
 	cert, err := x509.ParseCertificate(block.Bytes)
@@ -49,7 +45,7 @@ func (t *Context) loadCACertificate(filename string) error {
 func (t *Context) loadCAPrivate(filename string) error {
 	caFile, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return err
+		return errors.New(fmt.Sprintf("error loading CA key: %v", err))
 	}
 	block, _ := pem.Decode(caFile)
 	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
@@ -91,12 +87,14 @@ func (t *Context) GenerateCertificate(domain string) (response *CertificateRespo
 		return
 	}
 
+	log.Println("generating certificate for " + domain)
+
 	t.validateContext()
 	response = new(CertificateResponse)
 
-	response.Key = utils.GenerateKey(t.PrivateKeyBitLength)
+	certificateKey := utils.GenerateKey(t.PrivateKeyBitLength)
 
-	publicKey := &response.Key.PublicKey
+	publicKey := &certificateKey.PublicKey
 
 	template := new(x509.Certificate)
 
@@ -127,14 +125,8 @@ func (t *Context) GenerateCertificate(domain string) (response *CertificateRespo
 		return
 	}
 
-	response.Certificate, err = x509.ParseCertificate(derBytes)
-	if err != nil {
-		return
-	}
-
 	response.CertificatePem = utils.EncodePemString("CERTIFICATE", derBytes)
-	response.CertificateKey = utils.EncodePemString("RSA PRIVATE KEY", x509.MarshalPKCS1PrivateKey(response.Key))
-	response.CertificateAuthority = t.CertificateAuthority
+	response.CertificateKey = utils.EncodePemString("RSA PRIVATE KEY", x509.MarshalPKCS1PrivateKey(certificateKey))
 	response.CertificateAuthorityPem = utils.EncodePemString("CERTIFICATE", t.CertificateAuthority.Raw)
 
 	return

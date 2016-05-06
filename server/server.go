@@ -7,6 +7,7 @@ import (
 	"github.com/mlctrez/gocert/engine"
 	"log"
 	"net/http"
+	"os"
 )
 
 // Context to pass information between middleware and handler.
@@ -39,6 +40,7 @@ func (c *Context) IndexPage(rw web.ResponseWriter, req *web.Request) {
 // Main entry point for server
 func Main(ctx *engine.Context) {
 	engineContext = ctx
+	web.Logger = log.New(os.Stdout, "", log.Ldate|log.Ltime)
 	router := web.New(Context{}).
 		Middleware(web.LoggerMiddleware).
 		Middleware(web.ShowErrorsMiddleware).
