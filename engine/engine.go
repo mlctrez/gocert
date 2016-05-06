@@ -31,7 +31,7 @@ type CertificateResponse struct {
 func (t *Context) loadCACertificate(filename string) error {
 	file, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return errors.New(fmt.Sprintf("error loading CA certificate: %v", err))
+		return errors.New(fmt.Sprintf("error loading CA certificate : %v", err))
 	}
 	block, _ := pem.Decode(file)
 	cert, err := x509.ParseCertificate(block.Bytes)
@@ -45,7 +45,7 @@ func (t *Context) loadCACertificate(filename string) error {
 func (t *Context) loadCAPrivate(filename string) error {
 	caFile, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return errors.New(fmt.Sprintf("error loading CA key: %v", err))
+		return errors.New(fmt.Sprintf("error loading CA key : %v", err))
 	}
 	block, _ := pem.Decode(caFile)
 	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)

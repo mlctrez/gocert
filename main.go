@@ -7,31 +7,43 @@ import (
 	"github.com/mlctrez/gocert/server"
 	"log"
 	"os"
+	"errors"
+	"strings"
 )
 
-func main() {
+var fs = flag.NewFlagSet("gocert", flag.ContinueOnError)
 
-	fs := flag.NewFlagSet("gocert", flag.ContinueOnError)
+func error(err interface{}) {
+
+	if !strings.Contains(fmt.Sprintf("%v", err), "flag provided but not defined") {
+		fmt.Println("Usage of gocert:")
+		fs.PrintDefaults()
+		fmt.Printf("\nERROR: %v\n", err)
+	}
+
+	os.Exit(1)
+}
+
+func main() {
 
 	var caCert string
 	var caKey string
 
 	fs.StringVar(&caCert, "cacert", "", "Path to the Certificate Authority certificate")
 	fs.StringVar(&caKey, "cakey", "", "Path to the Certificate Authority certificate private key")
-	err := fs.Parse(os.Args[1:])
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+	if err := fs.Parse(os.Args[1:]); err != nil {
+		error(err)
+	}
+
+	if caCert == "" || caKey == "" {
+		error(errors.New("both -cacert and -cakey are required"))
 	}
 
 	eng := new(engine.Context)
 	eng.PrivateKeyBitLength = 2048
 
-	err = eng.LoadCertificates(caCert, caKey)
-	if err != nil {
-		fs.PrintDefaults()
-		fmt.Println(err)
-		os.Exit(1)
+	if err := eng.LoadCertificates(caCert, caKey); err != nil {
+		error(err)
 	}
 
 	log.Println("starting server")
