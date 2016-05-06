@@ -1,3 +1,9 @@
+// Package engine provides a simlified interface to certificate generation
+// provided by the standard package crypto/*
+//
+// Currently this package supports generation of certificates suitable
+// for use in securing a web application.
+//
 package engine
 
 import (
@@ -9,6 +15,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/mlctrez/gocert/utils"
+	"io"
 	"io/ioutil"
 	"log"
 	"strings"
@@ -19,13 +26,40 @@ type Context struct {
 	CertificateAuthority           *x509.Certificate
 	CertificateAuthorityPrivateKey *rsa.PrivateKey
 	PrivateKeyBitLength            int
+	Development                    bool
 }
 
 // CertificateResponse is the result of a certificate generation request.
 type CertificateResponse struct {
-	CertificatePem          string `json:"crt_file"`
-	CertificateKey          string `json:"key_file"`
-	CertificateAuthorityPem string `json:"registry_ca"`
+	CertificatePem          string `json:"crt_file" xml:",cdata"`
+	CertificateKey          string `json:"key_file" xml:",cdata"`
+	CertificateAuthorityPem string `json:"registry_ca" xml:",cdata"`
+}
+
+func (c *CertificateResponse) WritePlain(w interface {
+	io.Writer
+}) (err error) {
+	if _, err = w.Write([]byte("## CertificatePem\n")); err != nil {
+		return err
+	}
+	if _, err = w.Write([]byte(c.CertificatePem)); err != nil {
+		return err
+	}
+
+	if _, err = w.Write([]byte("## CertificateKey\n")); err != nil {
+		return err
+	}
+	if _, err = w.Write([]byte(c.CertificateKey)); err != nil {
+		return err
+	}
+
+	if _, err = w.Write([]byte("## CertificateAuthorityPem\n")); err != nil {
+		return err
+	}
+	if _, err = w.Write([]byte(c.CertificateAuthorityPem)); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (t *Context) loadCACertificate(filename string) error {

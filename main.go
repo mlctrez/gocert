@@ -28,9 +28,11 @@ func main() {
 
 	var caCert string
 	var caKey string
+	var development bool
 
 	fs.StringVar(&caCert, "cacert", "", "Path to the Certificate Authority certificate")
 	fs.StringVar(&caKey, "cakey", "", "Path to the Certificate Authority certificate private key")
+	fs.BoolVar(&development, "development", false, "Enables stack trace middleware")
 	if err := fs.Parse(os.Args[1:]); err != nil {
 		error(err)
 	}
@@ -41,6 +43,7 @@ func main() {
 
 	eng := new(engine.Context)
 	eng.PrivateKeyBitLength = 2048
+	eng.Development = development
 
 	if err := eng.LoadCertificates(caCert, caKey); err != nil {
 		error(err)
