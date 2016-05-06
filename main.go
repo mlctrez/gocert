@@ -1,13 +1,13 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"github.com/mlctrez/gocert/engine"
 	"github.com/mlctrez/gocert/server"
 	"log"
 	"os"
-	"errors"
 	"strings"
 )
 
