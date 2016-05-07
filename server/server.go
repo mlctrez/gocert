@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	_ "expvar"
 )
 
 // Context to pass information between middleware and handler.
@@ -61,6 +62,12 @@ func (c *Context) IndexPage(rw web.ResponseWriter, req *web.Request) {
 	fmt.Fprintf(rw, "OK")
 }
 
+func (c *Context) DebugPage(rw web.ResponseWriter, req *web.Request) {
+	h, pattern := http.DefaultServeMux.Handler(req.Request)
+	web.Logger.Printf("serving DebugPage for pattern %s\n", pattern)
+	h.ServeHTTP(rw, req.Request)
+}
+
 // Main entry point for server
 func Main(ctx *engine.Context) {
 	engineContext = ctx
@@ -71,6 +78,7 @@ func Main(ctx *engine.Context) {
 		router.Middleware(web.ShowErrorsMiddleware)
 	}
 	router.Get("/", (*Context).IndexPage)
+	router.Get("/debug/vars", (*Context).DebugPage)
 	router.Get("/newcert/:*", (*Context).NewCert)
 
 	log.Fatal(http.ListenAndServe("0.0.0.0:8080", router))
