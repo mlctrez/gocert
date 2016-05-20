@@ -3,7 +3,6 @@ package server
 import (
 	"encoding/json"
 	"encoding/xml"
-	"errors"
 	"fmt"
 	"github.com/gocraft/web"
 	"github.com/mlctrez/gocert/engine"
