@@ -76,12 +76,14 @@ func Main(ctx *engine.Context) {
 	router.Middleware(web.LoggerMiddleware)
 	if ctx.Development {
 		router.Middleware(web.ShowErrorsMiddleware)
+	}
+	if ctx.DebugListenAddress != "" {
 		go func() {
-			log.Println(http.ListenAndServe("localhost:6060", nil))
+			log.Println(http.ListenAndServe(ctx.DebugListenAddress, nil))
 		}()
 	}
 	router.Get("/", (*Context).IndexPage)
 	router.Get("/newcert/:*", (*Context).NewCert)
 
-	log.Fatal(http.ListenAndServe("0.0.0.0:8080", router))
+	log.Fatal(http.ListenAndServe(ctx.ListenAddress, router))
 }

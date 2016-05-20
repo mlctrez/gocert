@@ -27,6 +27,8 @@ type Context struct {
 	CertificateAuthorityPrivateKey *rsa.PrivateKey
 	PrivateKeyBitLength            int
 	Development                    bool
+	ListenAddress                  string
+	DebugListenAddress             string
 }
 
 // CertificateResponse is the result of a certificate generation request.
