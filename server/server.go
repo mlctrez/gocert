@@ -4,14 +4,17 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"errors"
+	_ "expvar"
 	"fmt"
 	"github.com/gocraft/web"
 	"github.com/mlctrez/gocert/engine"
+	keyserver "github.com/mlctrez/gokeyserve/server"
 	"log"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"strings"
-	_ "expvar"
+	"time"
 )
 
 // Context to pass information between middleware and handler.
@@ -62,23 +65,27 @@ func (c *Context) IndexPage(rw web.ResponseWriter, req *web.Request) {
 	fmt.Fprintf(rw, "OK")
 }
 
-func (c *Context) DebugPage(rw web.ResponseWriter, req *web.Request) {
-	h, pattern := http.DefaultServeMux.Handler(req.Request)
-	web.Logger.Printf("serving DebugPage for pattern %s\n", pattern)
-	h.ServeHTTP(rw, req.Request)
-}
+//func (c *Context) Debug(rw web.ResponseWriter, req *web.Request) {
+//	h, pattern := http.DefaultServeMux.Handler(req.Request)
+//	web.Logger.Printf("serving DebugPage for pattern %s\n", pattern)
+//	h.ServeHTTP(rw, req.Request)
+//}
 
 // Main entry point for server
 func Main(ctx *engine.Context) {
+
+	keyserver.Start(time.Minute, 5)
+
 	engineContext = ctx
 	web.Logger = log.New(os.Stdout, "", log.Ldate|log.Ltime)
 	router := web.New(Context{})
 	router.Middleware(web.LoggerMiddleware)
 	if ctx.Development {
-		router.Middleware(web.ShowErrorsMiddleware)
+		go func() {
+			log.Println(http.ListenAndServe("localhost:6060", nil))
+		}()
 	}
 	router.Get("/", (*Context).IndexPage)
-	router.Get("/debug/vars", (*Context).DebugPage)
 	router.Get("/newcert/:*", (*Context).NewCert)
 
 	log.Fatal(http.ListenAndServe("0.0.0.0:8080", router))

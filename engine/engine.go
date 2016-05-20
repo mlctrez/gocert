@@ -7,16 +7,16 @@
 package engine
 
 import (
+	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"errors"
-	"fmt"
 	"github.com/mlctrez/gocert/utils"
+	keyserver "github.com/mlctrez/gokeyserve/server"
 	"io"
-	"io/ioutil"
 	"log"
 	"strings"
 )
@@ -39,55 +39,35 @@ type CertificateResponse struct {
 func (c *CertificateResponse) WritePlain(w interface {
 	io.Writer
 }) (err error) {
-	if _, err = w.Write([]byte("## CertificatePem\n")); err != nil {
-		return err
-	}
-	if _, err = w.Write([]byte(c.CertificatePem)); err != nil {
-		return err
-	}
 
-	if _, err = w.Write([]byte("## CertificateKey\n")); err != nil {
-		return err
-	}
-	if _, err = w.Write([]byte(c.CertificateKey)); err != nil {
-		return err
-	}
+	buff := bytes.NewBufferString("# Certificate Information\n\n")
 
-	if _, err = w.Write([]byte("## CertificateAuthorityPem\n")); err != nil {
-		return err
-	}
-	if _, err = w.Write([]byte(c.CertificateAuthorityPem)); err != nil {
-		return err
-	}
-	return nil
+	buff.WriteString("\n## CertificatePem\n")
+	buff.WriteString(c.CertificatePem)
+
+	buff.WriteString("\n## CertificateKey\n")
+	buff.WriteString(c.CertificateKey)
+
+	buff.WriteString("\n## CertificateAuthorityPem\n")
+	buff.WriteString(c.CertificateAuthorityPem)
+
+	_, err = buff.WriteTo(w)
+
+	return err
 }
 
 func (t *Context) loadCACertificate(filename string) error {
-	file, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return errors.New(fmt.Sprintf("error loading CA certificate : %v", err))
-	}
-	block, _ := pem.Decode(file)
+	block, _ := pem.Decode(utils.ReadFile(filename))
 	cert, err := x509.ParseCertificate(block.Bytes)
-	if err != nil {
-		return err
-	}
 	t.CertificateAuthority = cert
-	return nil
+	return err
 }
 
 func (t *Context) loadCAPrivate(filename string) error {
-	caFile, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return errors.New(fmt.Sprintf("error loading CA key : %v", err))
-	}
-	block, _ := pem.Decode(caFile)
+	block, _ := pem.Decode(utils.ReadFile(filename))
 	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
-	if err != nil {
-		return err
-	}
 	t.CertificateAuthorityPrivateKey = key
-	return nil
+	return err
 }
 
 func (t *Context) validateContext() {
@@ -126,7 +106,7 @@ func (t *Context) GenerateCertificate(domain string) (response *CertificateRespo
 	t.validateContext()
 	response = new(CertificateResponse)
 
-	certificateKey := utils.GenerateKey(t.PrivateKeyBitLength)
+	certificateKey := keyserver.GetGeneratedKey()
 
 	publicKey := &certificateKey.PublicKey
 

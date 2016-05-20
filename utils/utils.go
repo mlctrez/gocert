@@ -2,19 +2,12 @@ package utils
 
 import (
 	"crypto/rand"
-	"crypto/rsa"
 	"encoding/pem"
 	"io/ioutil"
 	"log"
 	"math/big"
 	"time"
 )
-
-// GenerateKey creates a rsa.PrivateKey of bits length or returns nil on error.
-func GenerateKey(bits int) (privatekey *rsa.PrivateKey) {
-	privatekey, _ = rsa.GenerateKey(rand.Reader, bits)
-	return privatekey
-}
 
 // ReadFile reads a file path into a byte array, terminating the process on error.
 func ReadFile(filename string) (content []byte) {
