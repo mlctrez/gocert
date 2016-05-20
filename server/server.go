@@ -4,18 +4,19 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"errors"
-	_ "expvar"
 	"fmt"
 	"github.com/gocraft/web"
 	"github.com/mlctrez/gocert/engine"
 	keyserver "github.com/mlctrez/gokeyserve/server"
 	"log"
 	"net/http"
-	_ "net/http/pprof"
 	"os"
 	"strings"
 	"time"
 )
+
+import _ "expvar"         // only used when -development flag set
+import _ "net/http/pprof" // only used when -development flag set
 
 // Context to pass information between middleware and handler.
 type Context struct {
@@ -51,7 +52,7 @@ func (c *Context) NewCert(rw web.ResponseWriter, req *web.Request) {
 		rw.Header().Add("Content-Type", "text/xml")
 		err = xml.NewEncoder(rw).Encode(response)
 	default:
-		err = errors.New(fmt.Sprintf("unsupported accept content type: %s", accept[0]))
+		err = fmt.Errorf("unsupported accept content type: %s", accept[0])
 	}
 	if err != nil {
 		panic(err)
@@ -65,22 +66,17 @@ func (c *Context) IndexPage(rw web.ResponseWriter, req *web.Request) {
 	fmt.Fprintf(rw, "OK")
 }
 
-//func (c *Context) Debug(rw web.ResponseWriter, req *web.Request) {
-//	h, pattern := http.DefaultServeMux.Handler(req.Request)
-//	web.Logger.Printf("serving DebugPage for pattern %s\n", pattern)
-//	h.ServeHTTP(rw, req.Request)
-//}
-
 // Main entry point for server
 func Main(ctx *engine.Context) {
 
-	keyserver.Start(time.Minute, 5)
+	keyserver.Start(10*time.Minute, 2)
 
 	engineContext = ctx
 	web.Logger = log.New(os.Stdout, "", log.Ldate|log.Ltime)
 	router := web.New(Context{})
 	router.Middleware(web.LoggerMiddleware)
 	if ctx.Development {
+		router.Middleware(web.ShowErrorsMiddleware)
 		go func() {
 			log.Println(http.ListenAndServe("localhost:6060", nil))
 		}()

@@ -36,6 +36,7 @@ type CertificateResponse struct {
 	CertificateAuthorityPem string `json:"registry_ca" xml:",cdata"`
 }
 
+// WritePlain exports the cert, key, and CA as text to the writer.
 func (c *CertificateResponse) WritePlain(w interface {
 	io.Writer
 }) (err error) {
