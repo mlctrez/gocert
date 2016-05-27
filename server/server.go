@@ -31,7 +31,7 @@ func (c *Context) NewCert(rw web.ResponseWriter, req *web.Request) {
 
 	req.ParseForm()
 
-	clientCert := req.PostForm["client"] != nil && req.PostForm["client"][0] == "true"
+	clientCert := req.FormValue("client") == "true"
 
 	if response, err := engineContext.GenerateCertificate(req.PathParams["*"], clientCert); err != nil {
 		panic(err)
@@ -70,10 +70,10 @@ func (c *Context) IndexPage(rw web.ResponseWriter, req *web.Request) {
 // Main entry point for server
 func Main(ctx *engine.Context) {
 
-	keyserver.Start(10 * time.Minute, 2)
+	keyserver.Start(10*time.Minute, 2)
 
 	engineContext = ctx
-	web.Logger = log.New(os.Stdout, "", log.Ldate | log.Ltime)
+	web.Logger = log.New(os.Stdout, "", log.Ldate|log.Ltime)
 	router := web.New(Context{})
 	router.Middleware(web.LoggerMiddleware)
 	if ctx.Development {
