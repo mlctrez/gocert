@@ -30,13 +30,18 @@ var (
 func (c *Context) NewCert(rw web.ResponseWriter, req *web.Request) {
 
 	req.ParseForm()
-	var err error
 
-	response, err := engineContext.GenerateCertificate(req.PathParams["*"])
-	if err != nil {
+	clientCert := req.PostForm["client"] != nil && req.PostForm["client"][0] == "true"
+
+	if response, err := engineContext.GenerateCertificate(req.PathParams["*"], clientCert); err != nil {
+		panic(err)
+	} else if err := sendResponse(response, rw, req); err != nil {
 		panic(err)
 	}
 
+}
+
+func sendResponse(response *engine.CertificateResponse, rw web.ResponseWriter, req *web.Request) (err error) {
 	accept := strings.Split(req.Header.Get("Accept"), ",")
 
 	switch accept[0] {
@@ -53,10 +58,7 @@ func (c *Context) NewCert(rw web.ResponseWriter, req *web.Request) {
 	default:
 		err = fmt.Errorf("unsupported accept content type: %s", accept[0])
 	}
-	if err != nil {
-		panic(err)
-	}
-
+	return
 }
 
 // IndexPage just serves a simple OK response.
@@ -68,10 +70,10 @@ func (c *Context) IndexPage(rw web.ResponseWriter, req *web.Request) {
 // Main entry point for server
 func Main(ctx *engine.Context) {
 
-	keyserver.Start(10*time.Minute, 2)
+	keyserver.Start(10 * time.Minute, 2)
 
 	engineContext = ctx
-	web.Logger = log.New(os.Stdout, "", log.Ldate|log.Ltime)
+	web.Logger = log.New(os.Stdout, "", log.Ldate | log.Ltime)
 	router := web.New(Context{})
 	router.Middleware(web.LoggerMiddleware)
 	if ctx.Development {

@@ -97,7 +97,7 @@ func (t *Context) LoadCertificates(pub string, priv string) error {
 
 // GenerateCertificate uses the certificate authority and private key to generate a certificate for the provided domain.
 // The wildcard and short domain name are also added as subject alternative names.
-func (t *Context) GenerateCertificate(domain string) (response *CertificateResponse, err error) {
+func (t *Context) GenerateCertificate(domain string, client bool) (response *CertificateResponse, err error) {
 
 	if !strings.Contains(domain, ".") {
 		err = errors.New("domain must contain at least one dot")
@@ -132,8 +132,9 @@ func (t *Context) GenerateCertificate(domain string) (response *CertificateRespo
 
 	template.NotBefore, template.NotAfter = utils.DateRange(30)
 
-	// TODO: handle client cert stuff
-	// template.ExtKeyUsage = append(template.ExtKeyUsage, x509.ExtKeyUsageClientAuth)
+	if client {
+		template.ExtKeyUsage = append(template.ExtKeyUsage, x509.ExtKeyUsageClientAuth)
+	}
 
 	derBytes, err := x509.CreateCertificate(rand.Reader, template, t.CertificateAuthority,
 		publicKey, t.CertificateAuthorityPrivateKey)
