@@ -20,6 +20,26 @@ func (cr *CertificateResponse) Certificate() (tls.Certificate, error) {
 	return tls.X509KeyPair([]byte(cr.CertificatePem), []byte(cr.CertificateKey))
 }
 
+func (cr *CertificateResponse) ClientTlsConfig() (config *tls.Config, err error) {
+
+	certificate, err := cr.Certificate()
+	if err != nil {
+		return nil, err
+	}
+
+	config = &tls.Config{}
+
+	config.Certificates = []tls.Certificate{certificate}
+
+	caCertPool := x509.NewCertPool()
+	caCertPool.AppendCertsFromPEM([]byte(cr.CertificateAuthorityPem))
+
+	config.RootCAs = caCertPool
+
+	return config, nil
+
+}
+
 func (cr *CertificateResponse) ServerTlsConfig(clientCert bool) (config *tls.Config, err error) {
 
 	certificate, err := cr.Certificate()
