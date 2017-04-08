@@ -45,10 +45,6 @@ func sendResponse(response *engine.CertificateResponse, rw web.ResponseWriter, r
 	accept := strings.Split(req.Header.Get("Accept"), ",")
 
 	switch accept[0] {
-
-	case "text/plain", "text/html":
-		rw.Header().Add("Content-Type", "text/plain")
-		err = response.WritePlain(rw)
 	case "application/json":
 		rw.Header().Add("Content-Type", "application/json")
 		err = json.NewEncoder(rw).Encode(response)
@@ -56,7 +52,8 @@ func sendResponse(response *engine.CertificateResponse, rw web.ResponseWriter, r
 		rw.Header().Add("Content-Type", "text/xml")
 		err = xml.NewEncoder(rw).Encode(response)
 	default:
-		err = fmt.Errorf("unsupported accept content type: %s", accept[0])
+		rw.Header().Add("Content-Type", "text/plain")
+		err = response.WritePlain(rw)
 	}
 	return
 }
