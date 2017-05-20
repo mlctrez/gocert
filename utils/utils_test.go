@@ -29,17 +29,6 @@ func TestDateRange(t *testing.T) {
 
 }
 
-func TestGenerateKey(t *testing.T) {
-	if GenerateKey(2048) == nil {
-		t.Error("failed to generate private key")
-	}
-
-	if GenerateKey(-1) != nil {
-		t.Error("failed to handle error")
-	}
-
-}
-
 func TestGenerateSerial(t *testing.T) {
 	if GenerateSerial() == nil {
 		t.Error("failed to generate serial")

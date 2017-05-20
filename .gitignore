@@ -2,3 +2,4 @@
 vendor/
 registryCA.*
 testCert.*
+coverage.txt
