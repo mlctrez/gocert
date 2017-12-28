@@ -1,4 +1,4 @@
-// Package engine provides a simlified interface to certificate generation
+// Package engine provides a simplified interface to certificate generation
 // provided by the standard package crypto/*
 //
 // Currently this package supports generation of certificates suitable
@@ -14,11 +14,12 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"errors"
-	"github.com/mlctrez/gocert/utils"
-	keyserver "github.com/mlctrez/gokeyserve/server"
 	"io"
 	"log"
 	"strings"
+
+	"github.com/mlctrez/gocert/utils"
+	kserver "github.com/mlctrez/gokeyserve/server"
 )
 
 // Context contains the attributes that are used to generate certificates.
@@ -29,6 +30,7 @@ type Context struct {
 	Development                    bool
 	ListenAddress                  string
 	DebugListenAddress             string
+	KeyServer                      *kserver.GoKeyServer
 }
 
 // CertificateResponse is the result of a certificate generation request.
@@ -39,9 +41,7 @@ type CertificateResponse struct {
 }
 
 // WritePlain exports the cert, key, and CA as text to the writer.
-func (c *CertificateResponse) WritePlain(w interface {
-	io.Writer
-}) (err error) {
+func (c *CertificateResponse) WritePlain(w io.Writer) (err error) {
 
 	buff := bytes.NewBufferString("# Certificate Information\n\n")
 
@@ -73,23 +73,22 @@ func (t *Context) loadCAPrivate(filename string) error {
 	return err
 }
 
-func (t *Context) validateContext() {
+func (t *Context) validateContext() error {
 	if t.CertificateAuthority == nil {
-		log.Fatal("EngineContext.CertificateAuthority nil")
+		return errors.New("EngineContext.CertificateAuthority nil")
 	}
 	if t.CertificateAuthorityPrivateKey == nil {
-		log.Fatal("EngineContext.CertificateAuthorityPrivateKey nil")
+		return errors.New("EngineContext.CertificateAuthorityPrivateKey nil")
 	}
+	return nil
 }
 
 // LoadCertificates reads the public and private keys for the certificate authority into the context.
-func (t *Context) LoadCertificates(pub string, priv string) error {
-	err := t.loadCACertificate(pub)
-	if err != nil {
+func (t *Context) LoadCertificates(pubfile string, privfile string) error {
+	if err := t.loadCACertificate(pubfile); err != nil {
 		return err
 	}
-	err = t.loadCAPrivate(priv)
-	if err != nil {
+	if err := t.loadCAPrivate(privfile); err != nil {
 		return err
 	}
 	return nil
@@ -106,10 +105,12 @@ func (t *Context) GenerateCertificate(domain string, client bool) (response *Cer
 
 	log.Println("generating certificate for " + domain)
 
-	t.validateContext()
-	response = new(CertificateResponse)
+	if err = t.validateContext(); err != nil {
+		return
+	}
+	response = &CertificateResponse{}
 
-	certificateKey := keyserver.GetGeneratedKey()
+	certificateKey := t.KeyServer.GetGeneratedKey()
 
 	publicKey := &certificateKey.PublicKey
 

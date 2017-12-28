@@ -4,14 +4,13 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"github.com/gocraft/web"
-	"github.com/mlctrez/gocert/engine"
-	keyserver "github.com/mlctrez/gokeyserve/server"
 	"log"
 	"net/http"
 	"os"
 	"strings"
-	"time"
+
+	"github.com/gocraft/web"
+	"github.com/mlctrez/gocert/engine"
 )
 
 import _ "expvar"         // only used when -development flag set
@@ -19,11 +18,8 @@ import _ "net/http/pprof" // only used when -development flag set
 
 // Context to pass information between middleware and handler.
 type Context struct {
+	ec *engine.Context
 }
-
-var (
-	engineContext *engine.Context
-)
 
 // NewCert generates a new certificate based on the provided domain
 // and returns the json payload containing the certificate and key.
@@ -33,11 +29,17 @@ func (c *Context) NewCert(rw web.ResponseWriter, req *web.Request) {
 
 	clientCert := req.FormValue("client") == "true"
 
-	if response, err := engineContext.GenerateCertificate(req.PathParams["*"], clientCert); err != nil {
-		panic(err)
-	} else if err := sendResponse(response, rw, req); err != nil {
+	log.Println("generating cert")
+	var response *engine.CertificateResponse
+	var err error
+	if response, err = c.ec.GenerateCertificate(req.PathParams["*"], clientCert); err != nil {
 		panic(err)
 	}
+	log.Println("sending cert")
+	if err := sendResponse(response, rw, req); err != nil {
+		panic(err)
+	}
+	log.Println("complete")
 
 }
 
@@ -67,12 +69,13 @@ func (c *Context) IndexPage(rw web.ResponseWriter, req *web.Request) {
 // Main entry point for server
 func Main(ctx *engine.Context) {
 
-	keyserver.Start(10*time.Minute, 2)
-
-	engineContext = ctx
 	web.Logger = log.New(os.Stdout, "", log.Ldate|log.Ltime)
 	router := web.New(Context{})
 	router.Middleware(web.LoggerMiddleware)
+	router.Middleware(func(c *Context, rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
+		c.ec = ctx
+		next(rw, req)
+	})
 	if ctx.Development {
 		router.Middleware(web.ShowErrorsMiddleware)
 	}
