@@ -14,7 +14,8 @@ before_install:
 
 
 install:
-  - $GOPATH/bin/dep ensure
+  - dep ensure
+  - dep status
 
 script:
   - bash test.sh
