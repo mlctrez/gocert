@@ -12,8 +12,9 @@ before_install:
   # Make the binary executable
   - chmod +x $GOPATH/bin/dep
 
+
 install:
-  - dep ensure
+  - $GOPATH/bin/dep ensure
 
 script:
   - bash test.sh
