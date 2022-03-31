@@ -11,6 +11,7 @@ import (
 
 	"github.com/gocraft/web"
 	"github.com/mlctrez/gocert/engine"
+	"github.com/mlctrez/gocert/utils"
 )
 
 import _ "expvar"         // only used when -development flag set
@@ -66,6 +67,13 @@ func (c *Context) IndexPage(rw web.ResponseWriter, req *web.Request) {
 	fmt.Fprintf(rw, "OK")
 }
 
+// CertificateAuthority serves up the certificate authority
+func (c *Context) CertificateAuthority(rw web.ResponseWriter, req *web.Request) {
+	rw.Header().Set("Content-Type", "text/plain")
+	pemString := utils.EncodePemString("CERTIFICATE", c.ec.CertificateAuthority.Raw)
+	_, _ = rw.Write([]byte(pemString))
+}
+
 // Main entry point for server
 func Main(ctx *engine.Context) {
 
@@ -85,6 +93,7 @@ func Main(ctx *engine.Context) {
 		}()
 	}
 	router.Get("/", (*Context).IndexPage)
+	router.Get("/ca", (*Context).CertificateAuthority)
 	router.Get("/newcert/:*", (*Context).NewCert)
 
 	log.Fatal(http.ListenAndServe(ctx.ListenAddress, router))
