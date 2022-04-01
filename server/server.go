@@ -69,7 +69,7 @@ func (c *Context) IndexPage(rw web.ResponseWriter, req *web.Request) {
 
 // CertificateAuthority serves up the certificate authority
 func (c *Context) CertificateAuthority(rw web.ResponseWriter, req *web.Request) {
-	rw.Header().Set("Content-Type", "text/plain")
+	rw.Header().Set("Content-Type", "application/x-pem-file")
 	pemString := utils.EncodePemString("CERTIFICATE", c.ec.CertificateAuthority.Raw)
 	_, _ = rw.Write([]byte(pemString))
 }
@@ -93,7 +93,7 @@ func Main(ctx *engine.Context) {
 		}()
 	}
 	router.Get("/", (*Context).IndexPage)
-	router.Get("/ca", (*Context).CertificateAuthority)
+	router.Get("/ca.pem", (*Context).CertificateAuthority)
 	router.Get("/newcert/:*", (*Context).NewCert)
 
 	log.Fatal(http.ListenAndServe(ctx.ListenAddress, router))
